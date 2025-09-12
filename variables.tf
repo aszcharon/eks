@@ -51,3 +51,43 @@ variable "node_min_size" {
   type        = number
   default     = 1
 }
+
+# Naming and Tagging
+variable "organization" {
+  description = "Organization name for resource naming"
+  type        = string
+  default     = "charon"
+}
+
+variable "team" {
+  description = "Team name responsible for resources"
+  type        = string
+  default     = "devops"
+}
+
+variable "cost_center" {
+  description = "Cost center for billing"
+  type        = string
+  default     = "engineering"
+}
+
+variable "additional_tags" {
+  description = "Additional tags to apply to all resources"
+  type        = map(string)
+  default     = {}
+}
+
+# Naming convention: {organization}-{project_name}-{environment}-{resource_type}
+locals {
+  name_prefix = "${var.organization}-${var.project_name}-${var.environment}"
+  
+  common_tags = merge({
+    Organization = var.organization
+    Project      = var.project_name
+    Environment  = var.environment
+    Team         = var.team
+    CostCenter   = var.cost_center
+    ManagedBy    = "terraform"
+    CreatedDate  = formatdate("YYYY-MM-DD", timestamp())
+  }, var.additional_tags)
+}

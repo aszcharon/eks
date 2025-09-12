@@ -4,6 +4,8 @@ module "vpc" {
   vpc_cidr     = var.vpc_cidr
   project_name = var.project_name
   environment  = var.environment
+  name_prefix  = local.name_prefix
+  common_tags  = local.common_tags
 }
 
 module "eks_cluster" {
@@ -15,6 +17,8 @@ module "eks_cluster" {
   public_subnet_ids  = module.vpc.public_subnet_ids
   private_subnet_ids = module.vpc.private_subnet_ids
   eks_version        = var.eks_version
+  name_prefix        = local.name_prefix
+  common_tags        = local.common_tags
 }
 
 module "eks_nodegroup" {
@@ -30,6 +34,8 @@ module "eks_nodegroup" {
   node_desired_size         = var.node_desired_size
   node_max_size             = var.node_max_size
   node_min_size             = var.node_min_size
+  name_prefix               = local.name_prefix
+  common_tags               = local.common_tags
 }
 
 module "eks_addons" {
