@@ -71,3 +71,43 @@ kubectl port-forward -n monitoring svc/grafana 3000:80
 kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
 # http://localhost:9090
 ```
+
+## 네이밍 및 태그 규칙
+
+### 네이밍 패턴
+```
+{organization}-{project_name}-{environment}-{resource_type}
+```
+
+**예시:**
+- VPC: `charon-eks-dev-vpc`
+- EKS Cluster: `charon-eks-dev-cluster`
+- Node Group: `charon-eks-dev-nodegroup`
+
+### 공통 태그
+모든 리소스에 자동 적용되는 태그:
+- **Organization**: charon
+- **Project**: eks
+- **Environment**: dev/staging/prod
+- **Team**: devops
+- **CostCenter**: engineering
+- **ManagedBy**: terraform
+- **CreatedDate**: 생성일자
+
+### 설정 방법
+`terraform.tfvars`에서 네이밍 규칙 커스터마이징:
+```hcl
+organization = "charon"
+project_name = "eks"
+environment  = "dev"
+team         = "devops"
+cost_center  = "engineering"
+
+additional_tags = {
+  Owner      = "DevOps Team"
+  Purpose    = "EKS Development Cluster"
+  Monitoring = "enabled"
+}
+```
+
+자세한 네이밍 규칙은 [NAMING_CONVENTION.md](./NAMING_CONVENTION.md)를 참조하세요.
