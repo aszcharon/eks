@@ -46,7 +46,16 @@ resource "aws_eks_cluster" "main" {
     security_group_ids      = [aws_security_group.eks_cluster.id]
     endpoint_private_access = true
     endpoint_public_access  = true
+    public_access_cidrs     = ["0.0.0.0/0"]
   }
+
+  # EKS 1.32 호환 설정
+  upgrade_policy {
+    support_type = "STANDARD"
+  }
+
+  # 로깅 활성화 (EKS 1.32 권장)
+  enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_policy

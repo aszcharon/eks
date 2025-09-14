@@ -4,6 +4,9 @@ resource "helm_release" "grafana" {
   chart      = "grafana"
   namespace  = "monitoring"
   version    = var.grafana_version
+  timeout    = 600
+  wait       = true
+  wait_for_jobs = true
 
   values = [
     yamlencode({
@@ -15,6 +18,13 @@ resource "helm_release" "grafana" {
       }
       service = {
         type = "LoadBalancer"
+      }
+      # EKS 1.32 호환성 설정
+      resources = {
+        requests = {
+          cpu = "100m"
+          memory = "128Mi"
+        }
       }
       datasources = {
         "datasources.yaml" = {

@@ -1,5 +1,5 @@
 locals {
-  availability_zones = ["ap-northeast-2a", "ap-northeast-2c"]
+  availability_zones = ["ap-northeast-2a", "ap-northeast-2b", "ap-northeast-2c", "ap-northeast-2d"]
 }
 
 resource "aws_vpc" "main" {
@@ -24,7 +24,7 @@ resource "aws_subnet" "public" {
   count = 2
 
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index)
+  cidr_block              = "192.168.${count.index}.0/24"
   availability_zone       = local.availability_zones[count.index]
   map_public_ip_on_launch = true
 
@@ -34,38 +34,48 @@ resource "aws_subnet" "public" {
   }
 }
 
-resource "aws_subnet" "private" {
+resource "aws_subnet" "private_eks" {
   count = 2
 
   vpc_id            = aws_vpc.main.id
-  cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index + 10)
+  cidr_block        = "192.168.${count.index + 10}.0/24"
   availability_zone = local.availability_zones[count.index]
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-private-${count.index + 1}"
+    Name = "${var.project_name}-${var.environment}-private-eks-${count.index + 1}"
     "kubernetes.io/role/internal-elb" = "1"
+    Type = "EKS"
+  }
+}
+
+resource "aws_subnet" "private_rds" {
+  count = 2
+
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "192.168.${count.index + 20}.0/24"
+  availability_zone = local.availability_zones[count.index]
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-private-rds-${count.index + 1}"
+    Type = "RDS"
   }
 }
 
 resource "aws_eip" "nat" {
-  count = 2
-
   domain = "vpc"
   depends_on = [aws_internet_gateway.main]
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-eip-${count.index + 1}"
+    Name = "${var.project_name}-${var.environment}-eip"
   }
 }
 
 resource "aws_nat_gateway" "main" {
-  count = 2
-
-  allocation_id = aws_eip.nat[count.index].id
-  subnet_id     = aws_subnet.public[count.index].id
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public[0].id
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-nat-${count.index + 1}"
+    Name = "${var.project_name}-${var.environment}-nat"
   }
 
   depends_on = [aws_internet_gateway.main]
@@ -85,17 +95,15 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table" "private" {
-  count = 2
-
   vpc_id = aws_vpc.main.id
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main[count.index].id
+    nat_gateway_id = aws_nat_gateway.main.id
   }
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-private-rt-${count.index + 1}"
+    Name = "${var.project_name}-${var.environment}-private-rt"
   }
 }
 
@@ -106,9 +114,16 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_route_table_association" "private" {
+resource "aws_route_table_association" "private_eks" {
   count = 2
 
-  subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private[count.index].id
+  subnet_id      = aws_subnet.private_eks[count.index].id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "private_rds" {
+  count = 2
+
+  subnet_id      = aws_subnet.private_rds[count.index].id
+  route_table_id = aws_route_table.private.id
 }

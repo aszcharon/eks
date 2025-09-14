@@ -6,5 +6,5 @@ variable "cluster_endpoint" {
 variable "prometheus_version" {
   description = "Prometheus Helm chart version"
   type        = string
-  default     = "55.5.0"
+  default     = "66.2.2"
 }

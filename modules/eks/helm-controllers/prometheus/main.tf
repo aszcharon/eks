@@ -10,6 +10,9 @@ resource "helm_release" "prometheus" {
   chart      = "kube-prometheus-stack"
   namespace  = "monitoring"
   version    = var.prometheus_version
+  timeout    = 900
+  wait       = true
+  wait_for_jobs = true
 
   values = [
     yamlencode({

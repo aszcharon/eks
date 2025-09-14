@@ -6,5 +6,5 @@ variable "cluster_endpoint" {
 variable "metrics_server_version" {
   description = "Metrics Server Helm chart version"
   type        = string
-  default     = "3.11.0"
+  default     = "3.12.2"
 }

@@ -6,7 +6,7 @@ variable "prometheus_endpoint" {
 variable "grafana_version" {
   description = "Grafana Helm chart version"
   type        = string
-  default     = "7.0.19"
+  default     = "8.8.2"
 }
 
 variable "grafana_admin_password" {

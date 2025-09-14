@@ -36,3 +36,12 @@ output "monitoring_info" {
     grafana_url    = "Access via LoadBalancer or kubectl port-forward: kubectl port-forward -n monitoring svc/grafana 3000:80"
   }
 }
+
+output "argocd_info" {
+  description = "ArgoCD access information"
+  value = {
+    server_url = module.argocd.argocd_server_url
+    admin_password_command = module.argocd.argocd_admin_password
+  }
+  sensitive = true
+}

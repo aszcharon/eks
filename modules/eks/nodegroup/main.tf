@@ -66,6 +66,11 @@ resource "aws_eks_node_group" "main" {
   node_role_arn   = aws_iam_role.eks_node_group.arn
   subnet_ids      = var.private_subnet_ids
   instance_types  = var.node_instance_types
+  
+  # EKS 1.32 호환 AMI 설정
+  ami_type       = "AL2023_x86_64_STANDARD"
+  capacity_type  = "ON_DEMAND"
+  disk_size      = 20
 
   scaling_config {
     desired_size = var.node_desired_size
@@ -74,7 +79,12 @@ resource "aws_eks_node_group" "main" {
   }
 
   update_config {
-    max_unavailable = 1
+    max_unavailable_percentage = 25
+  }
+
+  # EKS 1.32 최적화 설정
+  remote_access {
+    source_security_group_ids = [aws_security_group.eks_nodes.id]
   }
 
   depends_on = [

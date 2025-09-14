@@ -25,7 +25,7 @@ variable "vpc_cidr" {
 variable "eks_version" {
   description = "EKS cluster version"
   type        = string
-  default     = "1.28"
+  default     = "1.32"
 }
 
 variable "node_instance_types" {
@@ -75,6 +75,11 @@ variable "additional_tags" {
   description = "Additional tags to apply to all resources"
   type        = map(string)
   default     = {}
+}
+
+variable "bastion_public_key" {
+  description = "Public key for Bastion server SSH access"
+  type        = string
 }
 
 # Naming convention: {organization}-{project_name}-{environment}-{resource_type}

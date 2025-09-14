@@ -4,8 +4,6 @@ module "vpc" {
   vpc_cidr     = var.vpc_cidr
   project_name = var.project_name
   environment  = var.environment
-  name_prefix  = local.name_prefix
-  common_tags  = local.common_tags
 }
 
 module "eks_cluster" {
@@ -15,10 +13,8 @@ module "eks_cluster" {
   environment        = var.environment
   vpc_id             = module.vpc.vpc_id
   public_subnet_ids  = module.vpc.public_subnet_ids
-  private_subnet_ids = module.vpc.private_subnet_ids
+  private_subnet_ids = module.vpc.private_eks_subnet_ids
   eks_version        = var.eks_version
-  name_prefix        = local.name_prefix
-  common_tags        = local.common_tags
 }
 
 module "eks_nodegroup" {
@@ -29,13 +25,11 @@ module "eks_nodegroup" {
   vpc_id                    = module.vpc.vpc_id
   cluster_name              = module.eks_cluster.cluster_id
   cluster_security_group_id = module.eks_cluster.cluster_security_group_id
-  private_subnet_ids        = module.vpc.private_subnet_ids
+  private_subnet_ids        = module.vpc.private_eks_subnet_ids
   node_instance_types       = var.node_instance_types
   node_desired_size         = var.node_desired_size
   node_max_size             = var.node_max_size
   node_min_size             = var.node_min_size
-  name_prefix               = local.name_prefix
-  common_tags               = local.common_tags
 }
 
 module "eks_addons" {
@@ -51,12 +45,16 @@ module "metrics_server" {
   source = "./modules/eks/helm-controllers/metrics-server"
 
   cluster_endpoint = module.eks_cluster.cluster_endpoint
+
+  depends_on = [module.eks_addons, module.eks_nodegroup]
 }
 
 module "prometheus" {
   source = "./modules/eks/helm-controllers/prometheus"
 
   cluster_endpoint = module.eks_cluster.cluster_endpoint
+
+  depends_on = [module.eks_addons, module.eks_nodegroup]
 }
 
 module "grafana" {
@@ -64,5 +62,23 @@ module "grafana" {
 
   prometheus_endpoint = "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
 
-  depends_on = [module.prometheus]
+  depends_on = [module.prometheus, module.eks_addons]
+}
+
+module "bastion" {
+  source = "./modules/bastion"
+
+  project_name     = var.project_name
+  environment      = var.environment
+  vpc_id           = module.vpc.vpc_id
+  public_subnet_id = module.vpc.public_subnet_ids[0]
+  public_key       = var.bastion_public_key
+}
+
+module "argocd" {
+  source = "./modules/eks/helm-controllers/argocd"
+
+  cluster_endpoint = module.eks_cluster.cluster_endpoint
+
+  depends_on = [module.eks_addons, module.eks_nodegroup]
 }
