@@ -1,66 +1,66 @@
-# EKS Terraform Infrastructure
+# EKS Terraform 인프라
 
-Complete Terraform infrastructure for Amazon EKS cluster with GitOps-ready monitoring and deployment tools.
+GitOps 기반 모니터링 및 배포 도구가 포함된 완전한 Amazon EKS 클러스터 Terraform 인프라입니다.
 
-## 🏗️ Architecture
+## 🏗️ 아키텍처
 
-### Core Infrastructure
-- **VPC**: Custom VPC with public/private subnets across multiple AZs
-- **EKS Cluster**: Managed Kubernetes cluster with OIDC provider
-- **Node Groups**: Managed worker nodes in private subnets
-- **Bastion Host**: Secure access point for cluster management
+### 핵심 인프라
+- **VPC**: 다중 AZ에 걸친 퍼블릭/프라이빗 서브넷이 있는 커스텀 VPC
+- **EKS 클러스터**: OIDC 프로바이더가 포함된 관리형 Kubernetes 클러스터
+- **노드 그룹**: 프라이빗 서브넷의 관리형 워커 노드
+- **Bastion 호스트**: 클러스터 관리를 위한 보안 접근 지점
 
-### Helm Controllers & Monitoring
-- **ArgoCD**: GitOps continuous deployment with LoadBalancer access
-- **Prometheus**: Monitoring and alerting stack
-- **Grafana**: Visualization dashboard with Prometheus integration
-- **Metrics Server**: Resource monitoring for HPA
+### Helm 컨트롤러 및 모니터링
+- **ArgoCD**: LoadBalancer 접근이 가능한 GitOps 지속적 배포
+- **Prometheus**: 모니터링 및 알림 스택
+- **Grafana**: Prometheus 통합 시각화 대시보드
+- **Metrics Server**: HPA를 위한 리소스 모니터링
 
-### Security & Access
-- **IAM Roles**: Proper RBAC for EKS components
-- **Security Groups**: Least privilege network access
-- **Auto-generated Secrets**: ArgoCD credentials saved to bastion
+### 보안 및 접근
+- **IAM 역할**: EKS 구성 요소를 위한 적절한 RBAC
+- **보안 그룹**: 최소 권한 네트워크 접근
+- **자동 생성 시크릿**: ArgoCD 자격 증명이 bastion에 저장됨
 
-## 🚀 Quick Start
+## 🚀 빠른 시작
 
-### Prerequisites
-- AWS CLI configured with appropriate permissions
+### 사전 요구사항
+- 적절한 권한으로 구성된 AWS CLI
 - Terraform >= 1.0
 - kubectl
-- SSH key pair for bastion access
+- bastion 접근을 위한 SSH 키 페어
 
-### Deployment
+### 배포
 
-1. **Clone and configure**
+1. **클론 및 구성**
 ```bash
 git clone https://github.com/aszcharon/eks.git
 cd eks
 cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with your values
+# terraform.tfvars 파일을 수정하세요
 ```
 
-2. **Deploy infrastructure**
+2. **인프라 배포**
 ```bash
 terraform init
 terraform plan
 terraform apply
 ```
 
-3. **Access cluster**
+3. **클러스터 접근**
 ```bash
-# Configure kubectl
+# kubectl 구성
 aws eks --region ap-northeast-2 update-kubeconfig --name <cluster-name>
 
-# Connect to bastion
+# bastion 연결
 ssh -i ~/.ssh/id_rsa ec2-user@<bastion-ip>
 
-# Check ArgoCD credentials
+# ArgoCD 자격 증명 확인
 cat /home/ec2-user/argo_secrets
 ```
 
-## 📋 Configuration
+## 📋 설정
 
-### Required Variables
+### 필수 변수
 ```hcl
 aws_region = "ap-northeast-2"
 organization = "charon"
@@ -69,7 +69,7 @@ environment = "dev"
 bastion_public_key = "ssh-rsa AAAAB3..."
 ```
 
-### Optional Variables
+### 선택적 변수
 ```hcl
 vpc_cidr = "10.0.0.0/16"
 eks_version = "1.28"
@@ -79,107 +79,107 @@ node_max_size = 4
 node_min_size = 1
 ```
 
-## 🔧 Installed Components
+## 🔧 설치된 구성 요소
 
-### Installation Order
-1. **Core EKS** → VPC, Cluster, Nodes, Add-ons
-2. **Helm** → Installation and verification
-3. **Monitoring Stack** → ArgoCD, Prometheus, Grafana (parallel)
-4. **Secrets** → ArgoCD credentials to bastion
-5. **Metrics Server** → Resource monitoring
+### 설치 순서
+1. **핵심 EKS** → VPC, 클러스터, 노드, 애드온
+2. **Helm** → 설치 및 검증
+3. **모니터링 스택** → ArgoCD, Prometheus, Grafana (병렬)
+4. **시크릿** → ArgoCD 자격 증명을 bastion에 저장
+5. **Metrics Server** → 리소스 모니터링
 
-### Access URLs
-After deployment, access services via LoadBalancer:
-- **ArgoCD**: `http://<alb-hostname>` (credentials in `/home/ec2-user/argo_secrets`)
+### 접근 URL
+배포 후 LoadBalancer를 통해 서비스에 접근:
+- **ArgoCD**: `http://<alb-hostname>` (자격 증명은 `/home/ec2-user/argo_secrets`에 있음)
 - **Prometheus**: `http://<prometheus-alb>`
 - **Grafana**: `http://<grafana-alb>` (admin/admin123!)
 
-## 🔐 Security Features
+## 🔐 보안 기능
 
-- **Private Subnets**: Worker nodes isolated from internet
-- **Bastion Access**: Secure jump host for cluster management
-- **IAM Integration**: Proper RBAC with AWS IAM
-- **Network Policies**: Security groups with least privilege
-- **Auto-generated Secrets**: Secure credential management
+- **프라이빗 서브넷**: 워커 노드가 인터넷에서 격리됨
+- **Bastion 접근**: 클러스터 관리를 위한 보안 점프 호스트
+- **IAM 통합**: AWS IAM과의 적절한 RBAC
+- **네트워크 정책**: 최소 권한 보안 그룹
+- **자동 생성 시크릿**: 보안 자격 증명 관리
 
-## 📊 Monitoring & GitOps
+## 📊 모니터링 및 GitOps
 
-### Prometheus Stack
-- **Metrics Collection**: Cluster and application metrics
-- **Alerting**: AlertManager for notifications
-- **Grafana Integration**: Pre-configured dashboards
+### Prometheus 스택
+- **메트릭 수집**: 클러스터 및 애플리케이션 메트릭
+- **알림**: 알림을 위한 AlertManager
+- **Grafana 통합**: 사전 구성된 대시보드
 
 ### ArgoCD GitOps
-- **Repository Monitoring**: Automatic deployment from Git
-- **Sync Policies**: Declarative application management
-- **Web UI**: Visual deployment management
-- **CLI Access**: Command-line GitOps operations
+- **저장소 모니터링**: Git에서 자동 배포
+- **동기화 정책**: 선언적 애플리케이션 관리
+- **웹 UI**: 시각적 배포 관리
+- **CLI 접근**: 명령줄 GitOps 작업
 
-## 🔗 Related Repositories
+## 🔗 관련 저장소
 
-- **Application**: [aszcharon/blog](https://github.com/aszcharon/blog) - Spring Boot app with CI/CD
-- **Manifests**: [aszcharon/manifest](https://github.com/aszcharon/manifest) - Kubernetes deployments
+- **애플리케이션**: [aszcharon/blog](https://github.com/aszcharon/blog) - CI/CD가 포함된 Spring Boot 앱
+- **매니페스트**: [aszcharon/manifest](https://github.com/aszcharon/manifest) - Kubernetes 배포
 
-## 📤 Outputs
+## 📤 출력
 
 ```bash
-# Get all outputs
+# 모든 출력 확인
 terraform output
 
-# Specific outputs
+# 특정 출력
 terraform output configure_kubectl
 terraform output bastion_ssh_command
 terraform output -json argocd_info
 ```
 
-## 🧹 Cleanup
+## 🧹 정리
 
 ```bash
-# Delete Kubernetes resources first
+# 먼저 Kubernetes 리소스 삭제
 kubectl delete all --all -n charon-blog
 
-# Destroy infrastructure
+# 인프라 삭제
 terraform destroy
 ```
 
-## 🔍 Troubleshooting
+## 🔍 문제 해결
 
-### Common Issues
+### 일반적인 문제
 
-**ArgoCD not accessible**
+**ArgoCD 접근 불가**
 ```bash
-# Check LoadBalancer status
+# LoadBalancer 상태 확인
 kubectl get svc -n argocd
 kubectl describe svc argocd-server -n argocd
 ```
 
-**Helm installation fails**
+**Helm 설치 실패**
 ```bash
-# Check bastion connectivity
+# bastion 연결 확인
 ssh -i ~/.ssh/id_rsa ec2-user@<bastion-ip> "helm version"
 ```
 
-**Node group issues**
+**노드 그룹 문제**
 ```bash
-# Check node status
+# 노드 상태 확인
 kubectl get nodes
 kubectl describe nodes
 ```
 
-### Useful Commands
+### 유용한 명령어
 
 ```bash
-# Cluster health
+# 클러스터 상태
 kubectl get componentstatuses
 kubectl get pods -n kube-system
 
-# ArgoCD CLI login
+# ArgoCD CLI 로그인
 argocd login <argocd-url> --username admin --password <password> --insecure
 
-# Prometheus targets
+# Prometheus 대상
 kubectl port-forward -n prometheus svc/prometheus-kube-prometheus-prometheus 9090:9090
 ```
 
-## 🤝 Contributing
+## 🤝 기여
 
-Follow the naming conventions in `NAMING_CONVENTION.md` when contributing.
+기여할 때는 `NAMING_CONVENTION.md`의 네이밍 규칙을 따라주세요.
