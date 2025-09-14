@@ -1,5 +1,13 @@
 locals {
   availability_zones = ["ap-northeast-2a", "ap-northeast-2b", "ap-northeast-2c", "ap-northeast-2d"]
+  name_prefix = "${var.organization}-${var.project_name}-${var.environment}"
+  
+  common_tags = {
+    Organization = var.organization
+    Project      = var.project_name
+    Environment  = var.environment
+    ManagedBy    = "terraform"
+  }
 }
 
 resource "aws_vpc" "main" {

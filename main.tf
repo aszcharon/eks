@@ -2,6 +2,7 @@ module "vpc" {
   source = "./modules/vpc"
 
   vpc_cidr     = var.vpc_cidr
+  organization = var.organization
   project_name = var.project_name
   environment  = var.environment
 }
@@ -9,6 +10,7 @@ module "vpc" {
 module "eks_cluster" {
   source = "./modules/eks/cluster"
 
+  organization       = var.organization
   project_name       = var.project_name
   environment        = var.environment
   vpc_id             = module.vpc.vpc_id
@@ -20,6 +22,7 @@ module "eks_cluster" {
 module "eks_nodegroup" {
   source = "./modules/eks/nodegroup"
 
+  organization              = var.organization
   project_name              = var.project_name
   environment               = var.environment
   vpc_id                    = module.vpc.vpc_id
@@ -35,6 +38,7 @@ module "eks_nodegroup" {
 module "eks_addons" {
   source = "./modules/eks/addons"
 
+  organization    = var.organization
   project_name    = var.project_name
   environment     = var.environment
   cluster_name    = module.eks_cluster.cluster_id
@@ -68,6 +72,7 @@ module "grafana" {
 module "bastion" {
   source = "./modules/bastion"
 
+  organization     = var.organization
   project_name     = var.project_name
   environment      = var.environment
   vpc_id           = module.vpc.vpc_id
