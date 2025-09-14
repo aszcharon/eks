@@ -1,189 +1,185 @@
-# EKS Terraform Modules
+# EKS Terraform Infrastructure
 
-AWS EKS 클러스터를 Terraform으로 배포하는 모듈화된 구조입니다.
+Complete Terraform infrastructure for Amazon EKS cluster with GitOps-ready monitoring and deployment tools.
 
-## 🚀 주요 특징
+## 🏗️ Architecture
 
-- **EKS 1.32** 최신 버전 지원
-- **Amazon Linux 2023** Bastion 호스트
-- **Pod Identity Agent** 지원 (EKS 1.32 신규 기능)
-- **최적화된 의존성 관리**로 안정적인 Helm 배포
-- **완전 자동화된** 인프라 배포
+### Core Infrastructure
+- **VPC**: Custom VPC with public/private subnets across multiple AZs
+- **EKS Cluster**: Managed Kubernetes cluster with OIDC provider
+- **Node Groups**: Managed worker nodes in private subnets
+- **Bastion Host**: Secure access point for cluster management
 
-## 📁 구조
+### Helm Controllers & Monitoring
+- **ArgoCD**: GitOps continuous deployment with LoadBalancer access
+- **Prometheus**: Monitoring and alerting stack
+- **Grafana**: Visualization dashboard with Prometheus integration
+- **Metrics Server**: Resource monitoring for HPA
 
-```
-terraform/
-├── main.tf                    # 모든 모듈 호출
-├── variables.tf               # 전역 변수
-├── outputs.tf                 # 전역 출력
-├── versions.tf                # 프로바이더 (AWS 5.80+, Kubernetes 2.35+, Helm 2.17+)
-├── terraform.tfvars.example   # 변수 값 예시
-└── modules/
-    ├── vpc/                   # VPC 모듈
-    ├── bastion/               # Amazon Linux 2023 Bastion 호스트
-    └── eks/
-        ├── cluster/           # EKS 클러스터 (1.32)
-        ├── nodegroup/         # EKS 노드그룹 (AL2023)
-        ├── addons/            # EKS 애드온 (Pod Identity Agent 포함)
-        └── helm-controllers/
-            ├── metrics-server/    # Kubernetes 메트릭
-            ├── prometheus/        # 메트릭 수집/저장
-            ├── grafana/          # 메트릭 시각화
-            └── argocd/           # GitOps 배포
-```
+### Security & Access
+- **IAM Roles**: Proper RBAC for EKS components
+- **Security Groups**: Least privilege network access
+- **Auto-generated Secrets**: ArgoCD credentials saved to bastion
 
-## 배포 방법
+## 🚀 Quick Start
 
-1. **AWS 자격 증명 설정**
+### Prerequisites
+- AWS CLI configured with appropriate permissions
+- Terraform >= 1.0
+- kubectl
+- SSH key pair for bastion access
+
+### Deployment
+
+1. **Clone and configure**
 ```bash
-aws configure
-```
-
-2. **변수 파일 설정**
-```bash
+git clone https://github.com/aszcharon/eks.git
+cd eks
 cp terraform.tfvars.example terraform.tfvars
-# terraform.tfvars 파일 수정
+# Edit terraform.tfvars with your values
 ```
 
-3. **Terraform 초기화 및 배포**
+2. **Deploy infrastructure**
 ```bash
 terraform init
 terraform plan
 terraform apply
 ```
 
-## 🛠️ 포함된 컴포넌트
-
-### 인프라
-- **VPC**: 퍼블릭/프라이빗 서브넷, NAT 게이트웨이
-- **EKS 클러스터**: Kubernetes 1.32 (최신 버전)
-- **EKS 노드그룹**: Amazon Linux 2023 기반 관리형 워커 노드
-- **Bastion 호스트**: Amazon Linux 2023, kubectl/helm/aws-cli 사전 설치
-
-### EKS 애드온 (1.32 호환)
-- **VPC CNI**: v1.19.0-eksbuild.1
-- **CoreDNS**: v1.11.3-eksbuild.2
-- **Kube-proxy**: v1.32.0-eksbuild.2
-- **EBS CSI Driver**: v1.37.0-eksbuild.1
-- **Pod Identity Agent**: v1.3.4-eksbuild.1 (신규)
-
-### Helm 차트
-- **Metrics Server**: v3.12.2 (Kubernetes 메트릭)
-- **Prometheus**: v66.2.2 (메트릭 수집/저장)
-- **Grafana**: v8.8.2 (메트릭 시각화)
-- **ArgoCD**: v7.7.11 (GitOps 배포)
-
-## 🔧 접근 방법
-
-### kubectl 설정
+3. **Access cluster**
 ```bash
-aws eks --region ap-northeast-2 update-kubeconfig --name charon-eks-dev
+# Configure kubectl
+aws eks --region ap-northeast-2 update-kubeconfig --name <cluster-name>
+
+# Connect to bastion
+ssh -i ~/.ssh/id_rsa ec2-user@<bastion-ip>
+
+# Check ArgoCD credentials
+cat /home/ec2-user/argo_secrets
 ```
 
-### Bastion 호스트 접근
-```bash
-# SSH 접속
-ssh -i bastion-key ec2-user@<BASTION_PUBLIC_IP>
+## 📋 Configuration
 
-# kubectl 명령어 (k alias 사용 가능)
-k get nodes
-kubectl get pods -A
-```
-
-### 모니터링 도구 접근
-
-#### Grafana
-```bash
-kubectl port-forward -n monitoring svc/grafana 3000:80
-# http://localhost:3000 (admin/admin123!)
-```
-
-#### Prometheus
-```bash
-kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
-# http://localhost:9090
-```
-
-#### ArgoCD
-```bash
-kubectl port-forward -n argocd svc/argocd-server 8080:80
-# http://localhost:8080
-# 초기 비밀번호: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
-```
-
-## 네이밍 및 태그 규칙
-
-### 네이밍 패턴
-```
-{organization}-{project_name}-{environment}-{resource_type}
-```
-
-**예시:**
-- VPC: `charon-eks-dev-vpc`
-- EKS Cluster: `charon-eks-dev-cluster`
-- Node Group: `charon-eks-dev-nodegroup`
-
-### 공통 태그
-모든 리소스에 자동 적용되는 태그:
-- **Organization**: charon
-- **Project**: eks
-- **Environment**: dev/staging/prod
-- **Team**: devops
-- **CostCenter**: engineering
-- **ManagedBy**: terraform
-- **CreatedDate**: 생성일자
-
-### 설정 방법
-`terraform.tfvars`에서 네이밍 규칙 커스터마이징:
+### Required Variables
 ```hcl
+aws_region = "ap-northeast-2"
 organization = "charon"
-project_name = "eks"
-environment  = "dev"
-team         = "devops"
-cost_center  = "engineering"
-
-additional_tags = {
-  Owner      = "DevOps Team"
-  Purpose    = "EKS Development Cluster"
-  Monitoring = "enabled"
-}
+project_name = "blog"
+environment = "dev"
+bastion_public_key = "ssh-rsa AAAAB3..."
 ```
 
-## ⚡ 성능 최적화
+### Optional Variables
+```hcl
+vpc_cidr = "10.0.0.0/16"
+eks_version = "1.28"
+node_instance_types = ["t3.medium"]
+node_desired_size = 2
+node_max_size = 4
+node_min_size = 1
+```
 
-### EKS 1.32 최적화
-- **Pod Identity Agent**: IAM 역할 관리 개선
-- **Amazon Linux 2023**: 최신 보안 패치 및 성능 향상
-- **GP2 StorageClass**: 안정적인 스토리지 성능
-- **최적화된 의존성**: Helm 배포 안정성 향상
+## 🔧 Installed Components
 
-### Bastion 호스트 사전 설치 도구
-- **kubectl**: v1.32.0 (EKS 버전과 일치)
-- **AWS CLI**: v2 (최신 버전)
-- **Helm**: v3 (최신 버전)
-- **k alias**: kubectl 단축 명령어
-- **bash completion**: 자동완성 지원
+### Installation Order
+1. **Core EKS** → VPC, Cluster, Nodes, Add-ons
+2. **Helm** → Installation and verification
+3. **Monitoring Stack** → ArgoCD, Prometheus, Grafana (parallel)
+4. **Secrets** → ArgoCD credentials to bastion
+5. **Metrics Server** → Resource monitoring
 
-## 🔍 문제 해결
+### Access URLs
+After deployment, access services via LoadBalancer:
+- **ArgoCD**: `http://<alb-hostname>` (credentials in `/home/ec2-user/argo_secrets`)
+- **Prometheus**: `http://<prometheus-alb>`
+- **Grafana**: `http://<grafana-alb>` (admin/admin123!)
 
-### Helm 배포 실패 시
+## 🔐 Security Features
+
+- **Private Subnets**: Worker nodes isolated from internet
+- **Bastion Access**: Secure jump host for cluster management
+- **IAM Integration**: Proper RBAC with AWS IAM
+- **Network Policies**: Security groups with least privilege
+- **Auto-generated Secrets**: Secure credential management
+
+## 📊 Monitoring & GitOps
+
+### Prometheus Stack
+- **Metrics Collection**: Cluster and application metrics
+- **Alerting**: AlertManager for notifications
+- **Grafana Integration**: Pre-configured dashboards
+
+### ArgoCD GitOps
+- **Repository Monitoring**: Automatic deployment from Git
+- **Sync Policies**: Declarative application management
+- **Web UI**: Visual deployment management
+- **CLI Access**: Command-line GitOps operations
+
+## 🔗 Related Repositories
+
+- **Application**: [aszcharon/blog](https://github.com/aszcharon/blog) - Spring Boot app with CI/CD
+- **Manifests**: [aszcharon/manifest](https://github.com/aszcharon/manifest) - Kubernetes deployments
+
+## 📤 Outputs
+
 ```bash
-# EKS 애드온 상태 확인
-aws eks describe-addon --cluster-name etech-eks-dev --addon-name vpc-cni
+# Get all outputs
+terraform output
 
-# 노드 상태 확인
+# Specific outputs
+terraform output configure_kubectl
+terraform output bastion_ssh_command
+terraform output -json argocd_info
+```
+
+## 🧹 Cleanup
+
+```bash
+# Delete Kubernetes resources first
+kubectl delete all --all -n charon-blog
+
+# Destroy infrastructure
+terraform destroy
+```
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+**ArgoCD not accessible**
+```bash
+# Check LoadBalancer status
+kubectl get svc -n argocd
+kubectl describe svc argocd-server -n argocd
+```
+
+**Helm installation fails**
+```bash
+# Check bastion connectivity
+ssh -i ~/.ssh/id_rsa ec2-user@<bastion-ip> "helm version"
+```
+
+**Node group issues**
+```bash
+# Check node status
 kubectl get nodes
 kubectl describe nodes
 ```
 
-### StorageClass 문제 시
-```bash
-# 기본 StorageClass 확인
-kubectl get storageclass
+### Useful Commands
 
-# EBS CSI 드라이버 확인
-kubectl get pods -n kube-system | grep ebs-csi
+```bash
+# Cluster health
+kubectl get componentstatuses
+kubectl get pods -n kube-system
+
+# ArgoCD CLI login
+argocd login <argocd-url> --username admin --password <password> --insecure
+
+# Prometheus targets
+kubectl port-forward -n prometheus svc/prometheus-kube-prometheus-prometheus 9090:9090
 ```
 
-자세한 네이밍 규칙은 [NAMING_CONVENTION.md](./NAMING_CONVENTION.md)를 참조하세요.
+## 🤝 Contributing
+
+Follow the naming conventions in `NAMING_CONVENTION.md` when contributing.
