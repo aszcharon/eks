@@ -54,6 +54,48 @@ module "metrics_server" {
   depends_on = [module.eks_addons, module.eks_nodegroup]
 }
 
+module "helm" {
+  source = "./modules/eks/helm-controllers/helm"
+
+  private_key  = file("~/.ssh/id_rsa")
+  bastion_host = module.bastion.bastion_private_ip
+
+  depends_on = [module.eks_addons, module.eks_nodegroup]
+}
+
+module "argocd" {
+  source = "./modules/eks/helm-controllers/argocd"
+
+  cluster_name = module.eks_cluster.cluster_id
+
+  depends_on = [module.helm]
+}
+
+module "prometheus" {
+  source = "./modules/eks/helm-controllers/prometheus"
+
+  cluster_name = module.eks_cluster.cluster_id
+
+  depends_on = [module.helm]
+}
+
+module "grafana" {
+  source = "./modules/eks/helm-controllers/grafana"
+
+  cluster_name = module.eks_cluster.cluster_id
+
+  depends_on = [module.helm]
+}
+
+module "argocd_secrets" {
+  source = "./modules/eks/helm-controllers/argocd-secrets"
+
+  private_key  = file("~/.ssh/id_rsa")
+  bastion_host = module.bastion.bastion_private_ip
+
+  depends_on = [module.argocd, module.prometheus, module.grafana]
+}
+
 module "bastion" {
   source = "./modules/bastion"
 

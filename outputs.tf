@@ -33,3 +33,13 @@ output "bastion_ssh_command" {
   value       = module.bastion.ssh_connection_command
 }
 
+output "argocd_info" {
+  description = "ArgoCD access information"
+  value = {
+    url      = module.argocd.argocd_server_url
+    username = "admin"
+    password = module.argocd.argocd_admin_password
+  }
+  sensitive = true
+}
+
