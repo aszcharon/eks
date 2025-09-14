@@ -78,7 +78,7 @@ terraform apply
 
 ### kubectl 설정
 ```bash
-aws eks --region ap-northeast-2 update-kubeconfig --name etech-eks-dev
+aws eks --region ap-northeast-2 update-kubeconfig --name charon-eks-dev
 ```
 
 ### Bastion 호스트 접근

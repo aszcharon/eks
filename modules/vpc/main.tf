@@ -7,17 +7,17 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
   enable_dns_support   = true
 
-  tags = {
-    Name = "${var.project_name}-${var.environment}-vpc"
-  }
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-vpc"
+  })
 }
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
-  tags = {
-    Name = "${var.project_name}-${var.environment}-igw"
-  }
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-igw"
+  })
 }
 
 resource "aws_subnet" "public" {
@@ -65,18 +65,18 @@ resource "aws_eip" "nat" {
   domain = "vpc"
   depends_on = [aws_internet_gateway.main]
 
-  tags = {
-    Name = "${var.project_name}-${var.environment}-eip"
-  }
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-eip"
+  })
 }
 
 resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public[0].id
 
-  tags = {
-    Name = "${var.project_name}-${var.environment}-nat"
-  }
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-nat"
+  })
 
   depends_on = [aws_internet_gateway.main]
 }
@@ -89,9 +89,9 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags = {
-    Name = "${var.project_name}-${var.environment}-public-rt"
-  }
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-public-rt"
+  })
 }
 
 resource "aws_route_table" "private" {
@@ -102,9 +102,9 @@ resource "aws_route_table" "private" {
     nat_gateway_id = aws_nat_gateway.main.id
   }
 
-  tags = {
-    Name = "${var.project_name}-${var.environment}-private-rt"
-  }
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-private-rt"
+  })
 }
 
 resource "aws_route_table_association" "public" {

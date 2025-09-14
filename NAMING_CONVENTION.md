@@ -8,10 +8,10 @@
 ```
 
 ### 예시
-- VPC: `etech-eks-dev-vpc`
-- EKS Cluster: `etech-eks-dev-cluster`
-- Node Group: `etech-eks-dev-nodegroup`
-- Security Group: `etech-eks-dev-sg-cluster`
+- VPC: `charon-eks-dev-vpc`
+- EKS Cluster: `charon-eks-dev-cluster`
+- Node Group: `charon-eks-dev-nodegroup`
+- Security Group: `charon-eks-dev-sg-cluster`
 
 ## 📋 공통 태그
 
@@ -19,7 +19,7 @@
 
 | 태그 키 | 설명 | 예시 값 |
 |---------|------|---------|
-| Organization | 조직명 | etech |
+| Organization | 조직명 | charon |
 | Project | 프로젝트명 | eks |
 | Environment | 환경 | dev/staging/prod |
 | Team | 담당팀 | devops |
@@ -32,7 +32,7 @@
 ### terraform.tfvars 수정
 ```hcl
 # 기본 네이밍
-organization = "etech"
+organization = "charon"
 project_name = "eks"
 environment  = "dev"
 team         = "devops"

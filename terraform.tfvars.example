@@ -1,8 +1,8 @@
 aws_region    = "ap-northeast-2"
-project_name  = "etech-eks"
+project_name  = "eks"
 environment   = "dev"
 vpc_cidr      = "192.168.0.0/16"
-eks_version   = "1.28"
+eks_version   = "1.32"
 
 # Node group configuration
 node_instance_types = ["t3.small"]
