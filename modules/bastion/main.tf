@@ -22,6 +22,14 @@ resource "aws_security_group" "bastion" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # EKS API 서버 접근을 위한 규칙
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags = {
     Name = "charon-${var.project_name}-${var.environment}-bastion-sg"
   }
@@ -62,6 +70,39 @@ resource "aws_ssm_parameter" "bastion_private_key" {
   }
 }
 
+# IAM Role for Bastion
+resource "aws_iam_role" "bastion" {
+  name = "${var.project_name}-${var.environment}-bastion-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "bastion_eks" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+  role       = aws_iam_role.bastion.name
+}
+
+resource "aws_iam_role_policy_attachment" "bastion_ssm" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  role       = aws_iam_role.bastion.name
+}
+
+resource "aws_iam_instance_profile" "bastion" {
+  name = "${var.project_name}-${var.environment}-bastion-profile"
+  role = aws_iam_role.bastion.name
+}
+
 # Bastion Instance
 resource "aws_instance" "bastion" {
   ami                    = data.aws_ami.amazon_linux.id
@@ -69,6 +110,7 @@ resource "aws_instance" "bastion" {
   key_name              = aws_key_pair.bastion.key_name
   vpc_security_group_ids = [aws_security_group.bastion.id]
   subnet_id             = var.public_subnet_id
+  iam_instance_profile   = aws_iam_instance_profile.bastion.name
 
   associate_public_ip_address = true
 

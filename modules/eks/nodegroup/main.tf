@@ -48,6 +48,13 @@ resource "aws_security_group" "eks_nodes" {
     security_groups = [var.cluster_security_group_id]
   }
 
+  ingress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [var.bastion_security_group_id]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -82,10 +89,11 @@ resource "aws_eks_node_group" "main" {
     max_unavailable_percentage = 25
   }
 
-  # EKS 1.32 최적화 설정
-  remote_access {
-    source_security_group_ids = [aws_security_group.eks_nodes.id]
-  }
+  # SSH 접근이 필요한 경우에만 활성화
+  # remote_access {
+  #   ec2_ssh_key = "your-key-name"
+  #   source_security_group_ids = [aws_security_group.eks_nodes.id]
+  # }
 
   depends_on = [
     aws_iam_role_policy_attachment.eks_worker_node_policy,

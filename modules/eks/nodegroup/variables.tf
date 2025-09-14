@@ -52,3 +52,8 @@ variable "node_min_size" {
   description = "Minimum number of nodes"
   type        = number
 }
+
+variable "bastion_security_group_id" {
+  description = "Bastion security group ID for EKS access"
+  type        = string
+}

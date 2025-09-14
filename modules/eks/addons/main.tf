@@ -43,6 +43,8 @@ resource "aws_eks_addon" "ebs_csi_driver" {
   resolve_conflicts_on_create     = "OVERWRITE"
   resolve_conflicts_on_update     = "OVERWRITE"
   
+  depends_on = [var.node_group_arn]
+  
   tags = {
     Name = "${var.project_name}-${var.environment}-ebs-csi-driver"
   }

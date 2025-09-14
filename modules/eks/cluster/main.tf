@@ -24,6 +24,13 @@ resource "aws_security_group" "eks_cluster" {
   name_prefix = "${var.project_name}-${var.environment}-eks-cluster-"
   vpc_id      = var.vpc_id
 
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["192.168.0.0/16"]  # VPC CIDR
+  }
+
   egress {
     from_port   = 0
     to_port     = 0

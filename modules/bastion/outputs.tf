@@ -19,6 +19,16 @@ output "private_key_parameter_name" {
 }
 
 output "ssh_connection_command" {
-  description = "SSH command to connect to bastion (requires private key from Parameter Store)"
-  value       = "ssh -i <private-key-file> ec2-user@${aws_instance.bastion.public_ip}"
+  description = "Connect to bastion using AWS Session Manager"
+  value       = "aws ssm start-session --target ${aws_instance.bastion.id}"
+}
+
+output "bastion_instance_id" {
+  description = "Bastion instance ID for Session Manager"
+  value       = aws_instance.bastion.id
+}
+
+output "bastion_security_group_id" {
+  description = "Bastion security group ID"
+  value       = aws_security_group.bastion.id
 }

@@ -23,25 +23,13 @@ output "configure_kubectl" {
   value       = "aws eks --region ${var.aws_region} update-kubeconfig --name ${module.eks_cluster.cluster_id}"
 }
 
-output "grafana_admin_password" {
-  description = "Grafana admin password"
-  value       = "admin123!"
-  sensitive   = true
+output "bastion_public_ip" {
+  description = "Bastion host public IP"
+  value       = module.bastion.bastion_public_ip
 }
 
-output "monitoring_info" {
-  description = "Monitoring stack information"
-  value = {
-    prometheus_url = "Access via kubectl port-forward: kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090"
-    grafana_url    = "Access via LoadBalancer or kubectl port-forward: kubectl port-forward -n monitoring svc/grafana 3000:80"
-  }
+output "bastion_ssh_command" {
+  description = "SSH command to connect to bastion"
+  value       = module.bastion.ssh_connection_command
 }
 
-output "argocd_info" {
-  description = "ArgoCD access information"
-  value = {
-    server_url = module.argocd.argocd_server_url
-    admin_password_command = module.argocd.argocd_admin_password
-  }
-  sensitive = true
-}
