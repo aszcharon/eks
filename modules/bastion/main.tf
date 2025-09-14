@@ -38,10 +38,28 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-# Key Pair
+# Key Pair - Generate dynamically or use existing
+resource "tls_private_key" "bastion" {
+  count     = var.create_key_pair ? 1 : 0
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
 resource "aws_key_pair" "bastion" {
   key_name   = "charon-${var.project_name}-${var.environment}-bastion-key"
-  public_key = var.public_key
+  public_key = var.create_key_pair ? tls_private_key.bastion[0].public_key_openssh : var.public_key
+}
+
+# Store private key in AWS Systems Manager Parameter Store (encrypted)
+resource "aws_ssm_parameter" "bastion_private_key" {
+  count = var.create_key_pair ? 1 : 0
+  name  = "/charon/${var.project_name}/${var.environment}/bastion/private-key"
+  type  = "SecureString"
+  value = tls_private_key.bastion[0].private_key_pem
+
+  tags = {
+    Name = "charon-${var.project_name}-${var.environment}-bastion-private-key"
+  }
 }
 
 # Bastion Instance

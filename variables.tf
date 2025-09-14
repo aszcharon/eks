@@ -78,8 +78,15 @@ variable "additional_tags" {
 }
 
 variable "bastion_public_key" {
-  description = "Public key for Bastion server SSH access"
+  description = "Public key for Bastion server SSH access (only used if create_bastion_key_pair is false)"
   type        = string
+  default     = ""
+}
+
+variable "create_bastion_key_pair" {
+  description = "Whether to create a new key pair for bastion or use existing public key"
+  type        = bool
+  default     = true
 }
 
 # Naming convention: {organization}-{project_name}-{environment}-{resource_type}

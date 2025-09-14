@@ -1,31 +1,17 @@
-# Terraform
+# Terraform files
 *.tfstate
 *.tfstate.*
 *.tfvars
+!*.tfvars.example
 .terraform/
 .terraform.lock.hcl
-crash.log
-override.tf
-override.tf.json
-*_override.tf
-*_override.tf.json
 
-# SSH Keys - CRITICAL SECURITY
-bastion-key
-bastion-key.pub
+# SSH Keys
 *.pem
 *.key
+id_rsa*
+*.pub
 
-# Terraform binaries
-terraform.exe
-terraform.zip
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
+# Environment files
+.env
+.env.local

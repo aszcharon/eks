@@ -24,6 +24,13 @@ variable "public_subnet_id" {
 }
 
 variable "public_key" {
-  description = "Public key for SSH access"
+  description = "Public key for SSH access (only used if create_key_pair is false)"
   type        = string
+  default     = ""
+}
+
+variable "create_key_pair" {
+  description = "Whether to create a new key pair or use existing public key"
+  type        = bool
+  default     = true
 }

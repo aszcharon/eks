@@ -78,6 +78,7 @@ module "bastion" {
   vpc_id           = module.vpc.vpc_id
   public_subnet_id = module.vpc.public_subnet_ids[0]
   public_key       = var.bastion_public_key
+  create_key_pair  = var.create_bastion_key_pair
 }
 
 module "argocd" {

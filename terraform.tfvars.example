@@ -11,4 +11,5 @@ node_max_size       = 4
 node_min_size       = 1
 
 # Bastion configuration
-bastion_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... your-public-key-here"
+create_bastion_key_pair = true  # Set to false if you want to use your own key
+# bastion_public_key = "ssh-rsa AAAAB3NzaC1yc2E... your-public-key-here"
