@@ -87,13 +87,23 @@ module "grafana" {
   depends_on = [module.helm]
 }
 
+module "aws_load_balancer_controller" {
+  source = "./modules/eks/helm-controllers/aws-load-balancer-controller"
+
+  cluster_name      = module.eks_cluster.cluster_id
+  oidc_provider_arn = module.eks_cluster.oidc_provider_arn
+  oidc_issuer       = module.eks_cluster.oidc_issuer
+
+  depends_on = [module.helm]
+}
+
 module "argocd_secrets" {
   source = "./modules/eks/helm-controllers/argocd-secrets"
 
   private_key  = file("~/.ssh/id_rsa")
   bastion_host = module.bastion.bastion_private_ip
 
-  depends_on = [module.argocd, module.prometheus, module.grafana]
+  depends_on = [module.argocd, module.prometheus, module.grafana, module.aws_load_balancer_controller]
 }
 
 module "bastion" {
