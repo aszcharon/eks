@@ -1,185 +1,164 @@
-# EKS Terraform 인프라
+# EKS Terraform Infrastructure
 
-GitOps 기반 모니터링 및 배포 도구가 포함된 완전한 Amazon EKS 클러스터 Terraform 인프라입니다.
+AWS EKS 클러스터를 Terraform으로 배포하는 완전한 인프라 코드입니다.
 
 ## 🏗️ 아키텍처
 
-### 핵심 인프라
-- **VPC**: 다중 AZ에 걸친 퍼블릭/프라이빗 서브넷이 있는 커스텀 VPC
-- **EKS 클러스터**: OIDC 프로바이더가 포함된 관리형 Kubernetes 클러스터
-- **노드 그룹**: 프라이빗 서브넷의 관리형 워커 노드
-- **Bastion 호스트**: 클러스터 관리를 위한 보안 접근 지점
+### 인프라 구성요소
+- **VPC**: 192.168.0.0/16 CIDR 블록
+- **서브넷**: Public 2개, Private EKS 2개, Private RDS 2개
+- **EKS 클러스터**: Kubernetes 1.32
+- **노드 그룹**: t3.medium 인스턴스 (Min: 1, Desired: 2, Max: 4)
+- **베스천 호스트**: EKS 클러스터 관리용
+- **Helm 애드온**: ArgoCD, Grafana, Prometheus, AWS Load Balancer Controller
 
-### Helm 컨트롤러 및 모니터링
-- **ArgoCD**: LoadBalancer 접근이 가능한 GitOps 지속적 배포
-- **Prometheus**: 모니터링 및 알림 스택
-- **Grafana**: Prometheus 통합 시각화 대시보드
-- **Metrics Server**: HPA를 위한 리소스 모니터링
-
-### 보안 및 접근
-- **IAM 역할**: EKS 구성 요소를 위한 적절한 RBAC
-- **보안 그룹**: 최소 권한 네트워크 접근
-- **자동 생성 시크릿**: ArgoCD 자격 증명이 bastion에 저장됨
+### EKS 애드온
+- VPC CNI: v1.20.0-eksbuild.1
+- CoreDNS: v1.11.3-eksbuild.3
+- Kube-proxy: v1.32.6-eksbuild.8
+- EBS CSI Driver: v1.48.0-eksbuild.2
+- Pod Identity Agent: v1.3.8-eksbuild.2
 
 ## 🚀 빠른 시작
 
-### 사전 요구사항
-- 적절한 권한으로 구성된 AWS CLI
-- Terraform >= 1.0
-- kubectl
-- bastion 접근을 위한 SSH 키 페어
+### 1. 사전 요구사항
+```bash
+# AWS CLI 설치 및 구성
+aws configure
 
-### 배포
+# Terraform 설치 (v1.0+)
+terraform --version
 
-1. **클론 및 구성**
+# kubectl 설치
+kubectl version --client
+```
+
+### 2. 저장소 클론
 ```bash
 git clone https://github.com/aszcharon/eks.git
 cd eks
-cp terraform.tfvars.example terraform.tfvars
-# terraform.tfvars 파일을 수정하세요
 ```
 
-2. **인프라 배포**
+### 3. 변수 설정
 ```bash
+cp terraform.tfvars.example terraform.tfvars
+# terraform.tfvars 파일을 편집하여 환경에 맞게 수정
+```
+
+### 4. 배포
+```bash
+# Terraform 초기화
 terraform init
+
+# 배포 계획 확인
 terraform plan
+
+# 인프라 배포 (Helm 제외)
+terraform apply -target=module.vpc -target=module.eks_cluster -target=module.eks_nodegroup -target=module.eks_addons -target=module.bastion -target=module.eks_access_entry
+
+# 전체 배포 (Helm 포함)
 terraform apply
 ```
 
-3. **클러스터 접근**
+### 5. kubectl 설정
 ```bash
-# kubectl 구성
-aws eks --region ap-northeast-2 update-kubeconfig --name <cluster-name>
-
-# bastion 연결
-ssh -i ~/.ssh/id_rsa ec2-user@<bastion-ip>
-
-# ArgoCD 자격 증명 확인
-cat /home/ec2-user/argo_secrets
-```
-
-## 📋 설정
-
-### 필수 변수
-```hcl
-aws_region = "ap-northeast-2"
-organization = "charon"
-project_name = "blog"
-environment = "dev"
-bastion_public_key = "ssh-rsa AAAAB3..."
-```
-
-### 선택적 변수
-```hcl
-vpc_cidr = "10.0.0.0/16"
-eks_version = "1.28"
-node_instance_types = ["t3.medium"]
-node_desired_size = 2
-node_max_size = 4
-node_min_size = 1
-```
-
-## 🔧 설치된 구성 요소
-
-### 설치 순서
-1. **핵심 EKS** → VPC, 클러스터, 노드, 애드온
-2. **Helm** → 설치 및 검증
-3. **모니터링 스택** → ArgoCD, Prometheus, Grafana (병렬)
-4. **시크릿** → ArgoCD 자격 증명을 bastion에 저장
-5. **Metrics Server** → 리소스 모니터링
-
-### 접근 URL
-배포 후 LoadBalancer를 통해 서비스에 접근:
-- **ArgoCD**: `http://<alb-hostname>` (자격 증명은 `/home/ec2-user/argo_secrets`에 있음)
-- **Prometheus**: `http://<prometheus-alb>`
-- **Grafana**: `http://<grafana-alb>` (admin/admin123!)
-
-## 🔐 보안 기능
-
-- **프라이빗 서브넷**: 워커 노드가 인터넷에서 격리됨
-- **Bastion 접근**: 클러스터 관리를 위한 보안 점프 호스트
-- **IAM 통합**: AWS IAM과의 적절한 RBAC
-- **네트워크 정책**: 최소 권한 보안 그룹
-- **자동 생성 시크릿**: 보안 자격 증명 관리
-
-## 📊 모니터링 및 GitOps
-
-### Prometheus 스택
-- **메트릭 수집**: 클러스터 및 애플리케이션 메트릭
-- **알림**: 알림을 위한 AlertManager
-- **Grafana 통합**: 사전 구성된 대시보드
-
-### ArgoCD GitOps
-- **저장소 모니터링**: Git에서 자동 배포
-- **동기화 정책**: 선언적 애플리케이션 관리
-- **웹 UI**: 시각적 배포 관리
-- **CLI 접근**: 명령줄 GitOps 작업
-
-## 🔗 관련 저장소
-
-- **애플리케이션**: [aszcharon/blog](https://github.com/aszcharon/blog) - CI/CD가 포함된 Spring Boot 앱
-- **매니페스트**: [aszcharon/manifest](https://github.com/aszcharon/manifest) - Kubernetes 배포
-
-## 📤 출력
-
-```bash
-# 모든 출력 확인
-terraform output
-
-# 특정 출력
-terraform output configure_kubectl
-terraform output bastion_ssh_command
-terraform output -json argocd_info
-```
-
-## 🧹 정리
-
-```bash
-# 먼저 Kubernetes 리소스 삭제
-kubectl delete all --all -n charon-blog
-
-# 인프라 삭제
-terraform destroy
-```
-
-## 🔍 문제 해결
-
-### 일반적인 문제
-
-**ArgoCD 접근 불가**
-```bash
-# LoadBalancer 상태 확인
-kubectl get svc -n argocd
-kubectl describe svc argocd-server -n argocd
-```
-
-**Helm 설치 실패**
-```bash
-# bastion 연결 확인
-ssh -i ~/.ssh/id_rsa ec2-user@<bastion-ip> "helm version"
-```
-
-**노드 그룹 문제**
-```bash
-# 노드 상태 확인
+aws eks --region ap-northeast-2 update-kubeconfig --name eks-dev
 kubectl get nodes
-kubectl describe nodes
 ```
 
-### 유용한 명령어
+## 📁 프로젝트 구조
+
+```
+eks/
+├── modules/
+│   ├── vpc/                    # VPC, 서브넷, 보안 그룹
+│   ├── eks/
+│   │   ├── cluster/           # EKS 클러스터
+│   │   ├── nodegroup/         # EKS 노드 그룹
+│   │   ├── addons/            # EKS 애드온
+│   │   └── access-entry/      # EKS 액세스 엔트리
+│   ├── bastion/               # 베스천 호스트
+│   └── helm-addons/           # Helm 차트 배포
+├── scripts/                   # 유틸리티 스크립트
+├── main.tf                    # 메인 Terraform 설정
+├── variables.tf               # 변수 정의
+├── outputs.tf                 # 출력 값
+├── terraform.tfvars.example   # 변수 예제 파일
+└── README.md                  # 이 파일
+```
+
+## 🔧 주요 변수
+
+| 변수명 | 설명 | 기본값 |
+|--------|------|--------|
+| `aws_region` | AWS 리전 | `ap-northeast-2` |
+| `organization` | 조직명 | `charon` |
+| `project_name` | 프로젝트명 | `eks` |
+| `environment` | 환경 | `dev` |
+| `vpc_cidr` | VPC CIDR 블록 | `192.168.0.0/16` |
+| `eks_version` | EKS 버전 | `1.32` |
+| `node_instance_types` | 노드 인스턴스 타입 | `["t3.medium"]` |
+
+## 🖥️ 베스천 호스트 접속
+
+### SSH 접속
+```bash
+ssh -i ../bastion-eks-dev.pem ec2-user@<BASTION_PUBLIC_IP>
+```
+
+### SSM 세션 매니저 (권장)
+```bash
+aws ssm start-session --target <INSTANCE_ID>
+```
+
+## 🎯 배포 순서
+
+1. **VPC 및 네트워킹**: 서브넷, 라우팅 테이블, NAT Gateway
+2. **IAM 역할**: EKS 클러스터 및 노드 그룹용 역할
+3. **EKS 클러스터**: 컨트롤 플레인 생성
+4. **노드 그룹**: 워커 노드 배포
+5. **EKS 애드온**: 필수 애드온 설치
+6. **베스천 호스트**: 관리용 EC2 인스턴스
+7. **Helm 애드온**: ArgoCD, 모니터링 도구 등
+
+## 🗑️ 리소스 삭제
 
 ```bash
-# 클러스터 상태
-kubectl get componentstatuses
-kubectl get pods -n kube-system
+# 전체 인프라 삭제
+terraform destroy
 
-# ArgoCD CLI 로그인
-argocd login <argocd-url> --username admin --password <password> --insecure
-
-# Prometheus 대상
-kubectl port-forward -n prometheus svc/prometheus-kube-prometheus-prometheus 9090:9090
+# 특정 모듈만 삭제
+terraform destroy -target=module.helm_addons
 ```
 
-## 🤝 기여
+## 📊 모니터링
 
-기여할 때는 `NAMING_CONVENTION.md`의 네이밍 규칙을 따라주세요.
+배포 후 다음 도구들을 사용할 수 있습니다:
+
+- **ArgoCD**: GitOps 배포 관리
+- **Grafana**: 메트릭 시각화
+- **Prometheus**: 메트릭 수집
+- **AWS Load Balancer Controller**: 로드 밸런서 관리
+
+## 🔒 보안 고려사항
+
+- 베스천 호스트는 특정 IP에서만 SSH 접근 가능
+- EKS 클러스터는 프라이빗 서브넷에 배포
+- IAM 역할 기반 액세스 제어
+- 보안 그룹으로 네트워크 트래픽 제한
+
+## 🤝 기여하기
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## 📝 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+
+## 📞 지원
+
+문제가 발생하거나 질문이 있으시면 이슈를 생성해 주세요.
