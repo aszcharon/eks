@@ -8,14 +8,21 @@ output "bastion_public_ip" {
   value       = aws_instance.bastion.public_ip
 }
 
-output "bastion_security_group_id" {
-  description = "Security group ID of the bastion instance"
-  value       = aws_security_group.bastion.id
-}
+
 
 output "private_key_parameter_name" {
   description = "AWS Systems Manager parameter name containing the private key"
-  value       = var.create_key_pair ? aws_ssm_parameter.bastion_private_key[0].name : null
+  value       = aws_ssm_parameter.bastion_private_key.name
+}
+
+output "private_key_file_path" {
+  description = "Local file path of the generated private key"
+  value       = local_file.bastion_private_key.filename
+}
+
+output "public_key_file_path" {
+  description = "Local file path of the generated public key"
+  value       = local_file.bastion_public_key.filename
 }
 
 output "ssh_connection_command" {
@@ -23,12 +30,10 @@ output "ssh_connection_command" {
   value       = "aws ssm start-session --target ${aws_instance.bastion.id}"
 }
 
-output "bastion_instance_id" {
-  description = "Bastion instance ID for Session Manager"
-  value       = aws_instance.bastion.id
+output "bastion_private_ip" {
+  description = "Private IP of the bastion instance"
+  value       = aws_instance.bastion.private_ip
 }
 
-output "bastion_security_group_id" {
-  description = "Bastion security group ID"
-  value       = aws_security_group.bastion.id
-}
+
+

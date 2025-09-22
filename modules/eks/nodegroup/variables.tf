@@ -23,11 +23,6 @@ variable "cluster_name" {
   type        = string
 }
 
-variable "cluster_security_group_id" {
-  description = "EKS cluster security group ID"
-  type        = string
-}
-
 variable "private_subnet_ids" {
   description = "List of private subnet IDs"
   type        = list(string)
@@ -53,7 +48,7 @@ variable "node_min_size" {
   type        = number
 }
 
-variable "bastion_security_group_id" {
-  description = "Bastion security group ID for EKS access"
+variable "eks_node_group_role_arn" {
+  description = "ARN of the EKS node group IAM role"
   type        = string
 }

@@ -22,8 +22,8 @@ resource "aws_iam_role" "aws_load_balancer_controller" {
         }
         Condition = {
           StringEquals = {
-            "${var.oidc_issuer}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
-            "${var.oidc_issuer}:aud" = "sts.amazonaws.com"
+            "${replace(var.oidc_issuer, "https://", "")}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
+            "${replace(var.oidc_issuer, "https://", "")}:aud" = "sts.amazonaws.com"
           }
         }
       }
@@ -37,11 +37,15 @@ resource "aws_iam_role_policy_attachment" "aws_load_balancer_controller" {
 }
 
 resource "helm_release" "aws_load_balancer_controller" {
-  name       = "aws-load-balancer-controller"
-  repository = "https://aws.github.io/eks-charts"
-  chart      = "aws-load-balancer-controller"
-  namespace  = "kube-system"
-  version    = "1.6.2"
+  name             = "aws-load-balancer-controller"
+  repository       = "https://aws.github.io/eks-charts"
+  chart            = "aws-load-balancer-controller"
+  version          = "1.9.2"
+  namespace        = "kube-system"
+  timeout          = 300
+  wait             = true
+  atomic           = true
+  create_namespace = false
 
   set {
     name  = "clusterName"
@@ -56,6 +60,11 @@ resource "helm_release" "aws_load_balancer_controller" {
   set {
     name  = "serviceAccount.name"
     value = "aws-load-balancer-controller"
+  }
+
+  set {
+    name  = "region"
+    value = var.region
   }
 
   depends_on = [kubernetes_service_account.aws_load_balancer_controller]

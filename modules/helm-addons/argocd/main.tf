@@ -5,11 +5,25 @@ resource "kubernetes_namespace" "argocd" {
 }
 
 resource "helm_release" "argocd" {
-  name       = "argocd"
-  repository = "https://argoproj.github.io/argo-helm"
-  chart      = "argo-cd"
-  namespace  = kubernetes_namespace.argocd.metadata[0].name
-  version    = "5.51.6"
+  name             = "argocd"
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argo-cd"
+  version          = "8.6.1"
+  namespace        = kubernetes_namespace.argocd.metadata[0].name
+  timeout          = 600
+  wait             = true
+  atomic           = true
+  create_namespace = false
+
+  set {
+    name  = "crds.install"
+    value = "true"
+  }
+
+  set {
+    name  = "configs.params.server\\.insecure"
+    value = "true"
+  }
 
   values = [
     yamlencode({
@@ -20,14 +34,6 @@ resource "helm_release" "argocd" {
             "service.beta.kubernetes.io/aws-load-balancer-type" = "nlb"
             "service.beta.kubernetes.io/aws-load-balancer-scheme" = "internet-facing"
           }
-        }
-        extraArgs = [
-          "--insecure"
-        ]
-      }
-      configs = {
-        params = {
-          "server.insecure" = true
         }
       }
     })

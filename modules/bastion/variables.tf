@@ -34,3 +34,30 @@ variable "create_key_pair" {
   type        = bool
   default     = true
 }
+
+variable "aws_region" {
+  description = "AWS region for EKS cluster"
+  type        = string
+  default     = "ap-northeast-2"
+}
+
+variable "cluster_name" {
+  description = "EKS cluster name for kubeconfig setup"
+  type        = string
+}
+
+variable "parent_directory" {
+  description = "Parent directory path to save generated key files"
+  type        = string
+  default     = ".."
+}
+
+variable "bastion_security_group_id" {
+  description = "Security group ID for bastion"
+  type        = string
+}
+
+variable "bastion_instance_profile_name" {
+  description = "Instance profile name for bastion"
+  type        = string
+}

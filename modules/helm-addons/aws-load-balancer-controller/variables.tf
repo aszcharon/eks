@@ -12,3 +12,8 @@ variable "oidc_issuer" {
   description = "EKS OIDC issuer URL without https://"
   type        = string
 }
+
+variable "region" {
+  description = "AWS region"
+  type        = string
+}

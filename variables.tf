@@ -89,6 +89,12 @@ variable "create_bastion_key_pair" {
   default     = true
 }
 
+variable "developer_user_arn" {
+  description = "ARN of the developer IAM user for EKS access (optional)"
+  type        = string
+  default     = ""
+}
+
 # Naming convention: {organization}-{project_name}-{environment}-{resource_type}
 locals {
   name_prefix = "${var.organization}-${var.project_name}-${var.environment}"

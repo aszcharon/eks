@@ -9,7 +9,7 @@ resource "helm_release" "grafana" {
   repository = "https://grafana.github.io/helm-charts"
   chart      = "grafana"
   namespace  = kubernetes_namespace.grafana.metadata[0].name
-  version    = "7.0.19"
+
 
   values = [
     yamlencode({

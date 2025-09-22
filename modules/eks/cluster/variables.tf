@@ -32,3 +32,14 @@ variable "eks_version" {
   description = "EKS cluster version"
   type        = string
 }
+
+variable "eks_cluster_role_arn" {
+  description = "ARN of the EKS cluster IAM role"
+  type        = string
+}
+
+variable "eks_cluster_security_group_id" {
+  description = "Security group ID for EKS cluster"
+  type        = string
+}
+

@@ -16,9 +16,11 @@ resource "null_resource" "install_helm" {
   }
 }
 
-resource "null_resource" "verify_helm" {
+resource "null_resource" "configure_kubectl" {
   provisioner "remote-exec" {
     inline = [
+      "aws eks update-kubeconfig --region ap-northeast-2 --name ${var.cluster_name}",
+      "kubectl get nodes",
       "helm version --short"
     ]
 

@@ -33,13 +33,30 @@ output "bastion_ssh_command" {
   value       = module.bastion.ssh_connection_command
 }
 
+output "bastion_private_key_path" {
+  description = "Path to the generated bastion private key file"
+  value       = module.bastion.private_key_file_path
+}
+
+output "bastion_public_key_path" {
+  description = "Path to the generated bastion public key file"
+  value       = module.bastion.public_key_file_path
+}
+
+output "bastion_ssh_connect" {
+  description = "SSH command to connect to bastion using generated key"
+  value       = "ssh -i ${module.bastion.private_key_file_path} ec2-user@${module.bastion.bastion_public_ip}"
+}
+
 output "argocd_info" {
   description = "ArgoCD access information"
   value = {
-    url      = module.argocd.argocd_server_url
+    url      = module.helm_addons.argocd_server_url
     username = "admin"
-    password = module.argocd.argocd_admin_password
+    password = module.helm_addons.argocd_admin_password
   }
   sensitive = true
 }
+
+
 

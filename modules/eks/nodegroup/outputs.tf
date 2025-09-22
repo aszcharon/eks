@@ -8,7 +8,3 @@ output "node_group_status" {
   value       = aws_eks_node_group.main.status
 }
 
-output "node_security_group_id" {
-  description = "Security group ID attached to the EKS nodes"
-  value       = aws_security_group.eks_nodes.id
-}
